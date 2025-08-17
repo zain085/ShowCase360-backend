@@ -21,11 +21,8 @@ const port = process.env.PORT || 5000;
 const app = express();
 
 app.use(cors({
-  origin: [
-    // "http://localhost:5173", 
-    "https://showcase360.netlify.app/" 
-  ],
-  credentials: true
+  origin: "http://localhost:5173", 
+  credentials: true 
 }));
 
 // Middleware to parse JSON requests
