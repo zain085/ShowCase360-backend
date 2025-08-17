@@ -1,0 +1,227 @@
+const { User } = require("../models/userModel");
+const { Expo } = require("../models/expoModel");
+const { Session } = require("../models/sessionModel");
+const bcrypt = require("bcryptjs");
+const asyncHandler = require("express-async-handler");
+const generateToken = require("../utils/generateToken");
+const crypto = require("crypto");
+
+// Controller for user registration
+const register = asyncHandler(async (req, res) => {
+  const { username, email, password, address, gender, profileImg, role } = req.body;
+
+  if (!username || !email || !password || !address || !gender || !role) {
+    return res.status(400).json({ message: "Input all fields." });
+  }
+
+  const user = await User.findOne({ email });
+  if (user) {
+    return res.status(401).json({ message: "Already have an account." });
+  }
+
+  const hashPassword = await bcrypt.hash(password, 10);
+
+  const newUser = await User.create({
+    username,
+    email,
+    password: hashPassword,
+    address,
+    gender,
+    profileImg,
+    role,
+  });
+
+  res.status(201).json({
+    message: "user register",
+    success: true,
+    user: newUser,
+  });
+});
+
+// Controller for user login
+const login = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({
+      message: "Input all fields.",
+    });
+  }
+
+  const userExists = await User.findOne({ email });
+
+  if (!userExists) {
+    return res.status(404).json({
+      message: "User not registered.",
+    });
+  }
+
+  const matchPassword = await bcrypt.compare(password, userExists.password);
+
+  if (!matchPassword) {
+    return res.status(400).json({ message: "Invalid password" });
+  }
+
+  res.status(200).json({
+    message: "user login",
+    success: true,
+    user: userExists,
+    token: generateToken(userExists._id),
+  });
+});
+
+// Controller for initiating password reset
+const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  const token = crypto.randomBytes(20).toString("hex");
+  user.resetToken = token;
+  user.resetTokenExpiry = Date.now() + 15 * 60 * 1000; // 15 minutes
+  await user.save();
+
+  res.status(200).json({
+    message: "Password reset token generated",
+    success: true,
+    resetToken: token,
+  });
+});
+
+// Controller for resetting password using token
+const resetPassword = asyncHandler(async (req, res) => {
+  const { token } = req.params;
+  const { password } = req.body;
+
+  const user = await User.findOne({
+    resetToken: token,
+    resetTokenExpiry: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    return res.status(400).json({ message: "Invalid or expired token" });
+  }
+
+  user.password = await bcrypt.hash(password, 10);
+  user.resetToken = undefined;
+  user.resetTokenExpiry = undefined;
+  await user.save();
+
+  res.status(200).json({
+    message: "Password reset successful",
+    success: true,
+  });
+});
+
+// Controller to retrieve authenticated user's profile
+const profile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select("-password");
+
+  res.status(200).json({
+    message: "user profile",
+    success: true,
+    user,
+  });
+});
+
+// Controller to update authenticated user's profile
+const updateProfile = asyncHandler(async (req, res) => {
+  const allowedUpdates = ["username", "address", "gender", "profileImg"];
+  const updates = {};
+
+  allowedUpdates.forEach((field) => {
+    if (req.body[field] !== undefined) {
+      updates[field] = req.body[field];
+    }
+  });
+
+  const updatedUser = await User.findByIdAndUpdate(req.user._id, updates, {
+    new: true,
+    runValidators: true,
+  }).select("-password");
+
+  if (!updatedUser) {
+    return res.status(404).json({
+      success: false,
+      message: "User not found",
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "Profile updated successfully",
+    user: updatedUser,
+  });
+});
+
+
+// Controller for exhibitor registration to an expo
+const registerForExpo = asyncHandler(async (req, res) => {
+  const expoId = req.params.expoId;
+
+  // Only exhibitors can register
+  if (req.user.role !== "exhibitor") {
+    return res.status(403).json({ message: "Only exhibitors can register for expos" });
+  }
+
+  // Check if expo exists
+  const expo = await Expo.findById(expoId);
+  if (!expo) {
+    return res.status(404).json({ message: "Expo not found" });
+  }
+
+  // Prevent duplicate registration
+  if (req.user.registeredExpos.includes(expoId)) {
+    return res.status(400).json({ message: "Already registered for this expo" });
+  }
+
+  // Register exhibitor for the expo
+  req.user.registeredExpos.push(expoId);
+  await req.user.save();
+
+  res.status(200).json({
+    message: "Expo registration successful",
+    success: true,
+  });
+});
+
+
+// Controller for attendee registration to a session
+const registerForSession = asyncHandler(async (req, res) => {
+  const sessionId = req.params.sessionId;
+
+  if (req.user.role !== "attendee") {
+    return res.status(403).json({ message: "Only attendees can register for sessions" });
+  }
+
+  const session = await Session.findById(sessionId);
+  if (!session) {
+    return res.status(404).json({ message: "Session not found" });
+  }
+
+  if (req.user.registeredSessions.includes(sessionId)) {
+    return res.status(400).json({ message: "Already registered for this session" });
+  }
+
+  req.user.registeredSessions.push(sessionId);
+  await req.user.save();
+
+  res.status(200).json({
+    message: "Session registration successful",
+    success: true,
+  });
+});
+
+module.exports = {
+  register,
+  login,
+  forgotPassword,
+  resetPassword,
+  profile,
+  updateProfile,
+  registerForExpo,
+  registerForSession,
+};

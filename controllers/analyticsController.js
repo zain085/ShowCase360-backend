@@ -1,0 +1,53 @@
+const { User } = require("../models/userModel");
+const { Expo } = require("../models/expoModel");
+const { Session } = require("../models/sessionModel");
+const asyncHandler = require("express-async-handler");
+
+// Controller to analyze popularity of expos based on registered attendees
+const expoAnalytics = asyncHandler(async (req, res) => {
+  const data = await Expo.find().lean();
+
+  const result = await Promise.all(
+    data.map(async (expo) => {
+      const count = await User.countDocuments({ registeredExpos: expo._id });
+      return {
+        expoId: expo._id,
+        title: expo.title,
+        attendeeCount: count,
+      };
+    })
+  );
+
+  res.status(200).json({
+    success: true,
+    message: "Expo analytics retrieved successfully",
+    data: result,
+  });
+});
+
+// Controller to analyze popularity of sessions based on registered attendees
+const sessionAnalytics = asyncHandler(async (req, res) => {
+  const data = await Session.find().lean();
+
+  const result = await Promise.all(
+    data.map(async (session) => {
+      const count = await User.countDocuments({ registeredSessions: session._id });
+      return {
+        sessionId: session._id,
+        topic: session.topic,
+        attendeeCount: count,
+      };
+    })
+  );
+
+  res.status(200).json({
+    success: true,
+    message: "Session analytics retrieved successfully",
+    data: result,
+  });
+});
+
+module.exports = {
+  expoAnalytics,
+  sessionAnalytics,
+};
