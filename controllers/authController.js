@@ -215,6 +215,43 @@ const registerForSession = asyncHandler(async (req, res) => {
   });
 });
 
+// Controller to get all users (except admins)
+const getAllUsers = asyncHandler(async (req, res) => {
+  try {
+    const users = await User.find({ role: "attendee" }).select("-password");
+    res.status(200).json({
+      success: true,
+      message: "Users retrieved successfully",
+      data: users,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching users",
+    });
+  }
+});
+
+// Controller to get all exhibitors
+const getAllExhibitors = asyncHandler(async (req, res) => {
+  try {
+    const exhibitors = await User.find({ role: "exhibitor" }).select("-password");
+    res.status(200).json({
+      success: true,
+      message: "Exhibitors retrieved successfully",
+      data: exhibitors,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching exhibitors",
+    });
+  }
+});
+
+
 module.exports = {
   register,
   login,
@@ -224,4 +261,6 @@ module.exports = {
   updateProfile,
   registerForExpo,
   registerForSession,
+  getAllUsers,
+  getAllExhibitors,
 };

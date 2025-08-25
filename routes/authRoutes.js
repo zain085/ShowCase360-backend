@@ -8,6 +8,8 @@ const {
   updateProfile,
   registerForExpo,
   registerForSession,
+  getAllUsers,
+  getAllExhibitors,
 } = require("../controllers/authController");
 
 const authenticate = require("../middlewares/authMiddleware");
@@ -51,7 +53,7 @@ userRouter.post("/resetPassword/:token", resetPassword);
 userRouter.get("/profile", authenticate, profile);
 
 /**
- * @route   PUT /auth/update profile
+ * @route   PUT /auth/update-profile
  * @desc    Update user profile
  * @access  Private (Authenticated users only)
  */
@@ -62,7 +64,8 @@ userRouter.put("/update-profile", authenticate, updateProfile);
  * @desc    Register an exhibitor for an expo
  * @access  Exhibitor only
  */
-userRouter.post("/register-expo/:expoId", authenticate, authorizeRole("exhibitor"), registerForExpo);
+userRouter.post(
+  "/register-expo/:expoId", authenticate, authorizeRole("exhibitor"), registerForExpo);
 
 /**
  * @route   POST /auth/register-session/:sessionId
@@ -70,5 +73,19 @@ userRouter.post("/register-expo/:expoId", authenticate, authorizeRole("exhibitor
  * @access  Attendee only
  */
 userRouter.post("/register-session/:sessionId", authenticate, authorizeRole("attendee"), registerForSession);
+
+/**
+ * @route   GET /auth/users
+ * @desc    Get all users (non-admins)
+ * @access  Admin only
+ */
+userRouter.get("/users", authenticate, authorizeRole("admin"), getAllUsers);
+
+/**
+ * @route   GET /auth/exhibitors
+ * @desc    Get all exhibitors
+ * @access  Admin only
+ */
+userRouter.get("/exhibitors", authenticate, authorizeRole("admin"), getAllExhibitors);
 
 module.exports = userRouter;
