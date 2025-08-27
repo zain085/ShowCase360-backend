@@ -1,5 +1,9 @@
 const express = require("express");
-const { expoAnalytics, sessionAnalytics } = require("../controllers/analyticsController");
+const { 
+  expoAnalytics, 
+  sessionAnalytics, 
+  getDashboardStats 
+} = require("../controllers/analyticsController");
 const authenticate = require("../middlewares/authMiddleware");
 const { authorizeRole } = require("../middlewares/roleMiddleware");
 
@@ -18,5 +22,12 @@ analyticsRouter.get("/expos", authenticate, authorizeRole("admin"), expoAnalytic
  * @access  Admin only
  */
 analyticsRouter.get("/sessions", authenticate, authorizeRole("admin"), sessionAnalytics);
+
+/**
+ * @route   GET /analytics/dashboard
+ * @desc    Get overall dashboard stats (counts of expos, exhibitors, attendees, booths, sessions, feedbacks)
+ * @access  Admin only
+ */
+analyticsRouter.get("/dashboard", authenticate, authorizeRole("admin"), getDashboardStats);
 
 module.exports = analyticsRouter;

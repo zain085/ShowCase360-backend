@@ -47,7 +47,31 @@ const sessionAnalytics = asyncHandler(async (req, res) => {
   });
 });
 
+// Controller to get overall dashboard stats
+const getDashboardStats = asyncHandler(async (req, res) => {
+  const totalExpos = await Expo.countDocuments();
+  const totalExhibitors = await User.countDocuments({ role: "exhibitor" });
+  const totalAttendees = await User.countDocuments({ role: "attendee" });
+  const totalSessions = await Session.countDocuments();
+  const totalBooths = await Booth.countDocuments();
+  const totalFeedbacks = await Feedback.countDocuments();
+
+  res.status(200).json({
+    success: true,
+    message: "Dashboard stats retrieved successfully",
+    data: {
+      totalExpos,
+      totalExhibitors,
+      totalAttendees,
+      totalSessions,
+      totalBooths,
+      totalFeedbacks,
+    },
+  });
+});
+
 module.exports = {
   expoAnalytics,
   sessionAnalytics,
+  getDashboardStats,
 };
