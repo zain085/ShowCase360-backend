@@ -1,6 +1,8 @@
 const { User } = require("../models/userModel");
 const { Expo } = require("../models/expoModel");
 const { Session } = require("../models/sessionModel");
+const { Booth } = require("../models/boothModel");
+const { Feedback } = require("../models/feedbackModel");
 const asyncHandler = require("express-async-handler");
 
 // Controller to analyze popularity of expos based on registered attendees
