@@ -1,5 +1,7 @@
 const { User } = require("../models/userModel");
 const { Expo } = require("../models/expoModel");
+const { Message } = require("../models/messageModel");
+const { Feedback } = require("../models/feedbackModel");
 const { Session } = require("../models/sessionModel");
 const bcrypt = require("bcryptjs");
 const asyncHandler = require("express-async-handler");
@@ -8,7 +10,8 @@ const crypto = require("crypto");
 
 // Controller for user registration
 const register = asyncHandler(async (req, res) => {
-  const { username, email, password, address, gender, profileImg, role } = req.body;
+  const { username, email, password, address, gender, profileImg, role } =
+    req.body;
 
   if (!username || !email || !password || !address || !gender || !role) {
     return res.status(400).json({ message: "Input all fields." });
@@ -195,18 +198,20 @@ const deleteAccount = asyncHandler(async (req, res) => {
       );
     }
 
-    // Delete user's messages
-    await Message.deleteMany({ senderId: userId });
+    // Delete feedbacks created by user
+    await Feedback.deleteMany({ userId: userId });
 
-    // Delete user's feedback
-    await Feedback.deleteMany({ userId });
+    // Delete messages where user is sender or receiver
+    await Message.deleteMany({
+      $or: [{ sender: userId }, { receiver: userId }],
+    });
 
     // Delete the user account
     await User.findByIdAndDelete(userId);
 
     res.status(200).json({
       success: true,
-      message: "Account deleted successfully",
+      message: "Account and all related data deleted successfully",
     });
   } catch (err) {
     console.error(err);
@@ -217,15 +222,15 @@ const deleteAccount = asyncHandler(async (req, res) => {
   }
 });
 
-
-
 // Controller for exhibitor registration to an expo
 const registerForExpo = asyncHandler(async (req, res) => {
   const expoId = req.params.expoId;
 
   // Only exhibitors can register
   if (req.user.role !== "exhibitor") {
-    return res.status(403).json({ message: "Only exhibitors can register for expos" });
+    return res
+      .status(403)
+      .json({ message: "Only exhibitors can register for expos" });
   }
 
   // Check if expo exists
@@ -236,7 +241,9 @@ const registerForExpo = asyncHandler(async (req, res) => {
 
   // Prevent duplicate registration
   if (req.user.registeredExpos.includes(expoId)) {
-    return res.status(400).json({ message: "Already registered for this expo" });
+    return res
+      .status(400)
+      .json({ message: "Already registered for this expo" });
   }
 
   // Register exhibitor for the expo
@@ -249,13 +256,14 @@ const registerForExpo = asyncHandler(async (req, res) => {
   });
 });
 
-
 // Controller for attendee registration to a session
 const registerForSession = asyncHandler(async (req, res) => {
   const sessionId = req.params.sessionId;
 
   if (req.user.role !== "attendee") {
-    return res.status(403).json({ message: "Only attendees can register for sessions" });
+    return res
+      .status(403)
+      .json({ message: "Only attendees can register for sessions" });
   }
 
   const session = await Session.findById(sessionId);
@@ -264,7 +272,9 @@ const registerForSession = asyncHandler(async (req, res) => {
   }
 
   if (req.user.registeredSessions.includes(sessionId)) {
-    return res.status(400).json({ message: "Already registered for this session" });
+    return res
+      .status(400)
+      .json({ message: "Already registered for this session" });
   }
 
   req.user.registeredSessions.push(sessionId);
@@ -297,7 +307,9 @@ const getAllUsers = asyncHandler(async (req, res) => {
 // Controller to get all exhibitors
 const getAllExhibitors = asyncHandler(async (req, res) => {
   try {
-    const exhibitors = await User.find({ role: "exhibitor" }).select("-password");
+    const exhibitors = await User.find({ role: "exhibitor" }).select(
+      "-password"
+    );
     res.status(200).json({
       success: true,
       message: "Exhibitors retrieved successfully",
@@ -311,7 +323,6 @@ const getAllExhibitors = asyncHandler(async (req, res) => {
     });
   }
 });
-
 
 module.exports = {
   register,
