@@ -157,6 +157,60 @@ const updateProfile = asyncHandler(async (req, res) => {
   });
 });
 
+// Controller to delete authenticated user's account
+const deleteAccount = asyncHandler(async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    // Fetch user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Only attendees can delete their own account
+    if (user.role !== "attendee") {
+      return res.status(403).json({
+        success: false,
+        message: "Only attendees are allowed to delete their account",
+      });
+    }
+
+    // Remove attendee from any registered sessions
+    if (user.registeredSessions && user.registeredSessions.length > 0) {
+      await Session.updateMany(
+        { _id: { $in: user.registeredSessions } },
+        { $pull: { attendees: userId } }
+      );
+    }
+
+    // Remove attendee from any registered expos
+    if (user.registeredExpos && user.registeredExpos.length > 0) {
+      await Expo.updateMany(
+        { _id: { $in: user.registeredExpos } },
+        { $pull: { exhibitors: userId } }
+      );
+    }
+
+    // Delete the user account
+    await User.findByIdAndDelete(userId);
+
+    res.status(200).json({
+      success: true,
+      message: "Account and all related data deleted successfully",
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: "Server error while deleting account",
+    });
+  }
+});
+
 
 // Controller for exhibitor registration to an expo
 const registerForExpo = asyncHandler(async (req, res) => {
@@ -259,6 +313,7 @@ module.exports = {
   resetPassword,
   profile,
   updateProfile,
+  deleteAccount,
   registerForExpo,
   registerForSession,
   getAllUsers,

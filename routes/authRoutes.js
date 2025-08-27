@@ -6,6 +6,7 @@ const {
   resetPassword,
   profile,
   updateProfile,
+  deleteAccount,
   registerForExpo,
   registerForSession,
   getAllUsers,
@@ -58,6 +59,14 @@ userRouter.get("/profile", authenticate, profile);
  * @access  Private (Authenticated users only)
  */
 userRouter.put("/update-profile", authenticate, updateProfile);
+
+/**
+ * @route   DELETE /auth/delete-account
+ * @desc    Delete the authenticated attendee's account
+ * @access  Attendee only
+ */
+userRouter.delete("/delete-account", authenticate, authorizeRole("attendee"), deleteAccount);
+
 
 /**
  * @route   POST /auth/register-expo/:expoId
