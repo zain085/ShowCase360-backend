@@ -195,12 +195,18 @@ const deleteAccount = asyncHandler(async (req, res) => {
       );
     }
 
+    // Delete user's messages
+    await Message.deleteMany({ senderId: userId });
+
+    // Delete user's feedback
+    await Feedback.deleteMany({ userId });
+
     // Delete the user account
     await User.findByIdAndDelete(userId);
 
     res.status(200).json({
       success: true,
-      message: "Account and all related data deleted successfully",
+      message: "Account deleted successfully",
     });
   } catch (err) {
     console.error(err);
@@ -210,6 +216,7 @@ const deleteAccount = asyncHandler(async (req, res) => {
     });
   }
 });
+
 
 
 // Controller for exhibitor registration to an expo
