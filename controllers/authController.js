@@ -3,6 +3,7 @@ const { Expo } = require("../models/expoModel");
 const { Message } = require("../models/messageModel");
 const { Feedback } = require("../models/feedbackModel");
 const { Session } = require("../models/sessionModel");
+const { Exhibitor } = require("../models/exhibitorModel");
 const bcrypt = require("bcryptjs");
 const asyncHandler = require("express-async-handler");
 const generateToken = require("../utils/generateToken");
@@ -289,7 +290,7 @@ const registerForSession = asyncHandler(async (req, res) => {
 // Controller to get all users (except admins)
 const getAllUsers = asyncHandler(async (req, res) => {
   try {
-    const users = await User.find({ role: "attendee" }).select("-password");
+    const users = await User.find({ role: "attendee" }).select("-password").sort({ createdAt:-1 });
     res.status(200).json({
       success: true,
       message: "Users retrieved successfully",
@@ -309,7 +310,7 @@ const getAllExhibitors = asyncHandler(async (req, res) => {
   try {
     const exhibitors = await User.find({ role: "exhibitor" }).select(
       "-password"
-    );
+    ).sort({ createdAt:-1 });
     res.status(200).json({
       success: true,
       message: "Exhibitors retrieved successfully",
@@ -324,6 +325,32 @@ const getAllExhibitors = asyncHandler(async (req, res) => {
   }
 });
 
+// Delete user (Admin/Organizer only)
+const deleteUser = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const user = await User.findById(id);
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: "User not found",
+    });
+  }
+
+  // If the user is an exhibitor, also delete their professional profile
+  if (user.role === "exhibitor") {
+    await Exhibitor.findOneAndDelete({ userId: user._id });
+  }
+
+  await user.deleteOne();
+
+  res.status(200).json({
+    success: true,
+    message: "User and related data deleted successfully",
+  });
+});
+
 module.exports = {
   register,
   login,
@@ -336,4 +363,5 @@ module.exports = {
   registerForSession,
   getAllUsers,
   getAllExhibitors,
+  deleteUser,
 };

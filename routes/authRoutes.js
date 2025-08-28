@@ -11,6 +11,7 @@ const {
   registerForSession,
   getAllUsers,
   getAllExhibitors,
+  deleteUser,
 } = require("../controllers/authController");
 
 const authenticate = require("../middlewares/authMiddleware");
@@ -96,5 +97,12 @@ userRouter.get("/users", authenticate, authorizeRole("admin"), getAllUsers);
  * @access  Admin only
  */
 userRouter.get("/exhibitors", authenticate, authorizeRole("admin"), getAllExhibitors);
+
+/**
+ * @route   DELETE /auth/users/:id
+ * @desc    Delete a user (works for both exhibitors + attendees)
+ * @access  Admin only
+ */
+userRouter.delete("/users/:id", authenticate, authorizeRole("admin"), deleteUser);
 
 module.exports = userRouter;

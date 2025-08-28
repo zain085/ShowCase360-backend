@@ -2,6 +2,7 @@ const express = require("express");
 const {
   sendMessage,
   getAttendeeMessages,
+  deleteMessage, // ✅ import delete controller
 } = require("../controllers/messageController");
 
 const authenticate = require("../middlewares/authMiddleware");
@@ -22,5 +23,11 @@ messageRouter.post("/send", authenticate, sendMessage);
  */
 messageRouter.get("/attendee-to-admin", authenticate, getAttendeeMessages);
 
+/**
+ * @route   DELETE /message/:id
+ * @desc    Delete a message by ID
+ * @access  Admin only
+ */
+messageRouter.delete("/:id", authenticate, deleteMessage);
 
 module.exports = messageRouter;

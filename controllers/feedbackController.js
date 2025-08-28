@@ -32,7 +32,9 @@ const submitFeedback = asyncHandler(async (req, res) => {
 
 // Controller to retrieve all submitted feedback (admin only)
 const getAllFeedback = asyncHandler(async (req, res) => {
-  const feedbacks = await Feedback.find().populate("userId", "username email").sort({ createdAt:-1 });
+  const feedbacks = await Feedback.find()
+    .populate("userId", "username email")
+    .sort({ createdAt: -1 });
 
   res.status(200).json({
     message: "All feedback",
@@ -41,7 +43,25 @@ const getAllFeedback = asyncHandler(async (req, res) => {
   });
 });
 
+// Controller to delete feedback (admin only)
+const deleteFeedback = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const feedback = await Feedback.findById(id);
+  if (!feedback) {
+    return res.status(404).json({ message: "Feedback not found", success: false });
+  }
+
+  await feedback.deleteOne();
+
+  res.status(200).json({
+    message: "Feedback deleted successfully",
+    success: true,
+  });
+});
+
 module.exports = {
   submitFeedback,
   getAllFeedback,
+  deleteFeedback,
 };
