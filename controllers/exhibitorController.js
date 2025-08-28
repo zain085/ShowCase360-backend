@@ -1,4 +1,5 @@
 const { Exhibitor } = require("../models/exhibitorModel");
+const { Booth } = require("../models/boothModel");
 const asyncHandler = require("express-async-handler");
 
 // Controller to retrieve all exhibitors (public)
@@ -162,17 +163,28 @@ const updateExhibitor = asyncHandler(async (req, res) => {
 
 // Controller for admin to delete an exhibitor
 const deleteExhibitor = asyncHandler(async (req, res) => {
-  const deleted = await Exhibitor.findByIdAndDelete(req.params.id);
+  // Find the exhibitor first
+  const exhibitor = await Exhibitor.findById(req.params.id);
 
-  if (!deleted) {
-    return res.status(404).json({ message: "Exhibitor not found" });
+  if (!exhibitor) {
+    return res.status(404).json({ message: "Exhibitor not found", success: false });
   }
 
+  // Free booths assigned to this exhibitor (match by exhibitor _id)
+  await Booth.updateMany(
+    { exhibitorId: exhibitor._id },
+    { $set: { exhibitorId: null, status: "available" } }
+  );
+
+  // Delete the professional profile
+  await exhibitor.deleteOne();
+
   res.status(200).json({
-    message: "Exhibitor deleted",
+    message: "Exhibitor profile and related booths updated successfully",
     success: true,
   });
 });
+
 
 // Controller to approve an exhibitor application
 const approveExhibitor = asyncHandler(async (req, res) => {

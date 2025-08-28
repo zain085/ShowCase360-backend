@@ -4,6 +4,7 @@ const { Message } = require("../models/messageModel");
 const { Feedback } = require("../models/feedbackModel");
 const { Session } = require("../models/sessionModel");
 const { Exhibitor } = require("../models/exhibitorModel");
+const { Booth } = require("../models/boothModel");
 const bcrypt = require("bcryptjs");
 const asyncHandler = require("express-async-handler");
 const generateToken = require("../utils/generateToken");
@@ -290,7 +291,9 @@ const registerForSession = asyncHandler(async (req, res) => {
 // Controller to get all users (except admins)
 const getAllUsers = asyncHandler(async (req, res) => {
   try {
-    const users = await User.find({ role: "attendee" }).select("-password").sort({ createdAt:-1 });
+    const users = await User.find({ role: "attendee" })
+      .select("-password")
+      .sort({ createdAt: -1 });
     res.status(200).json({
       success: true,
       message: "Users retrieved successfully",
@@ -308,9 +311,9 @@ const getAllUsers = asyncHandler(async (req, res) => {
 // Controller to get all exhibitors
 const getAllExhibitors = asyncHandler(async (req, res) => {
   try {
-    const exhibitors = await User.find({ role: "exhibitor" }).select(
-      "-password"
-    ).sort({ createdAt:-1 });
+    const exhibitors = await User.find({ role: "exhibitor" })
+      .select("-password")
+      .sort({ createdAt: -1 });
     res.status(200).json({
       success: true,
       message: "Exhibitors retrieved successfully",
@@ -338,9 +341,20 @@ const deleteUser = asyncHandler(async (req, res) => {
     });
   }
 
-  // If the user is an exhibitor, also delete their professional profile
+  /// If the user is an exhibitor, delete their professional profile
   if (user.role === "exhibitor") {
-    await Exhibitor.findOneAndDelete({ userId: user._id });
+    const exhibitor = await Exhibitor.findOne({ userId: user._id });
+
+    if (exhibitor) {
+      // Reset booths assigned to this exhibitor
+      await Booth.updateMany(
+        { exhibitorId: exhibitor._id },
+        { $set: { exhibitorId: null, status: "available" } }
+      );
+
+      // Delete the exhibitor profile
+      await exhibitor.deleteOne();
+    }
   }
 
   await user.deleteOne();
