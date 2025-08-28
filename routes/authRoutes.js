@@ -9,6 +9,7 @@ const {
   deleteAccount,
   registerForExpo,
   registerForSession,
+  getAdminUser,
   getAllUsers,
   getAllExhibitors,
   deleteUser,
@@ -83,6 +84,13 @@ userRouter.post(
  * @access  Attendee only
  */
 userRouter.post("/register-session/:sessionId", authenticate, authorizeRole("attendee"), registerForSession);
+
+/**
+ * @route   GET /auth/admin
+ * @desc    Get admin user info
+ * @access  Authenticated users
+ */
+userRouter.get("/admin", authenticate, getAdminUser);
 
 /**
  * @route   GET /auth/users

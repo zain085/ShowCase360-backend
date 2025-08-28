@@ -3,6 +3,7 @@ const { Expo } = require("../models/expoModel");
 const { Session } = require("../models/sessionModel");
 const { Booth } = require("../models/boothModel");
 const { Feedback } = require("../models/feedbackModel");
+const { Message } = require("../models/messageModel");
 const asyncHandler = require("express-async-handler");
 
 // Controller to analyze popularity of expos based on registered attendees
@@ -33,7 +34,9 @@ const sessionAnalytics = asyncHandler(async (req, res) => {
 
   const result = await Promise.all(
     data.map(async (session) => {
-      const count = await User.countDocuments({ registeredSessions: session._id });
+      const count = await User.countDocuments({
+        registeredSessions: session._id,
+      });
       return {
         sessionId: session._id,
         topic: session.topic,
@@ -58,6 +61,16 @@ const getDashboardStats = asyncHandler(async (req, res) => {
   const totalBooths = await Booth.countDocuments();
   const totalFeedbacks = await Feedback.countDocuments();
 
+  // Count messages from attendees and exhibitors
+  const totalAttendeeMessages = await Message.countDocuments({
+    sender: { $in: await User.find({ role: "attendee" }).distinct("_id") },
+  });
+
+  const totalExhibitorMessages = await Message.countDocuments({
+    sender: { $in: await User.find({ role: "exhibitor" }).distinct("_id") },
+  });
+  const totalMessages = totalAttendeeMessages + totalExhibitorMessages;
+
   res.status(200).json({
     success: true,
     message: "Dashboard stats retrieved successfully",
@@ -68,6 +81,9 @@ const getDashboardStats = asyncHandler(async (req, res) => {
       totalSessions,
       totalBooths,
       totalFeedbacks,
+      totalAttendeeMessages,
+      totalExhibitorMessages,
+      totalMessages,
     },
   });
 });

@@ -37,22 +37,25 @@ const getBoothById = asyncHandler(async (req, res) => {
 const getMyBooth = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
-  // Find exhibitor profile linked to the logged-in user
   const exhibitor = await Exhibitor.findOne({ userId });
-
   if (!exhibitor) {
-    res.status(404);
-    throw new Error("Exhibitor profile not found");
+    return res.status(404).json({
+      success: false,
+      message: "Exhibitor profile not found",
+    });
   }
 
-  // Find all booths assigned to this exhibitor
   const booths = await Booth.find({ exhibitorId: exhibitor._id })
     .populate("expoId", "title")
-    .populate("exhibitorId", "companyName").sort({ createdAt:-1 });
+    .populate("exhibitorId", "companyName")
+    .sort({ createdAt: -1 });
 
   if (!booths || booths.length === 0) {
-    res.status(404);
-    throw new Error("No booths assigned yet");
+    return res.status(200).json({
+      success: true,
+      message: "No booths assigned yet",
+      booths: [],
+    });
   }
 
   res.status(200).json({
@@ -61,6 +64,7 @@ const getMyBooth = asyncHandler(async (req, res) => {
     booths,
   });
 });
+
 
 
 

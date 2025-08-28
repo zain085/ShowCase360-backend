@@ -288,6 +288,24 @@ const registerForSession = asyncHandler(async (req, res) => {
   });
 });
 
+// Get the admin user
+const getAdminUser = asyncHandler(async (req, res) => {
+  // Find the first user with role 'admin'
+  const admin = await User.findOne({ role: "admin" }).select("_id username email profileImg");
+
+  if (!admin) {
+    return res.status(404).json({
+      success: false,
+      message: "Admin not found",
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    data: admin,
+  });
+});
+
 // Controller to get all users (except admins)
 const getAllUsers = asyncHandler(async (req, res) => {
   try {
@@ -375,6 +393,7 @@ module.exports = {
   deleteAccount,
   registerForExpo,
   registerForSession,
+  getAdminUser,
   getAllUsers,
   getAllExhibitors,
   deleteUser,

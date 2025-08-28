@@ -65,6 +65,28 @@ const getAttendeeMessages = asyncHandler(async (req, res) => {
   });
 });
 
+// Fetch all exhibitor → admin messages
+const getExhibitorMessages = asyncHandler(async (req, res) => {
+  const adminId = req.user._id;
+
+  // Fetch all messages sent to the admin
+  const messages = await Message.find({ receiver: adminId })
+    .populate("sender", "username email role")
+    .sort({ createdAt: -1 });
+
+  // Filter only exhibitors
+  const exhibitorMessages = messages.filter(
+    (msg) => msg.sender && msg.sender.role === "exhibitor"
+  );
+
+  res.status(200).json({
+    message: "Messages from exhibitors retrieved successfully",
+    success: true,
+    data: exhibitorMessages,
+  });
+});
+
+
 // Delete a message by ID
 const deleteMessage = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -85,4 +107,4 @@ const deleteMessage = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { sendMessage, getAttendeeMessages, deleteMessage };
+module.exports = { sendMessage, getAttendeeMessages, getExhibitorMessages, deleteMessage };

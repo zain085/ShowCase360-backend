@@ -2,7 +2,8 @@ const express = require("express");
 const {
   sendMessage,
   getAttendeeMessages,
-  deleteMessage, // ✅ import delete controller
+  getExhibitorMessages,
+  deleteMessage, 
 } = require("../controllers/messageController");
 
 const authenticate = require("../middlewares/authMiddleware");
@@ -22,6 +23,14 @@ messageRouter.post("/send", authenticate, sendMessage);
  * @access  Admin only
  */
 messageRouter.get("/attendee-to-admin", authenticate, getAttendeeMessages);
+
+/**
+ * @route   GET /message/exhibitor-to-admin
+ * @desc    Get all messages sent from exhibitors to admin
+ * @access  Admin only
+ */
+messageRouter.get("/exhibitor-to-admin", authenticate, getExhibitorMessages);
+
 
 /**
  * @route   DELETE /message/:id
