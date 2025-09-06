@@ -1,10 +1,12 @@
-const { Booth } = require("../models/boothModel"); 
-const { Exhibitor } = require("../models/exhibitorModel"); 
+const { Booth } = require("../models/boothModel");
+const { Exhibitor } = require("../models/exhibitorModel");
 const asyncHandler = require("express-async-handler");
 
 // Controller to retrieve all available (unassigned) booths
 const getAvailableBooths = asyncHandler(async (req, res) => {
-  const booths = await Booth.find({ exhibitorId: null }).sort({ createdAt:-1 });
+  const booths = await Booth.find({ exhibitorId: null })
+  .populate("expoId", "title")
+  .sort({createdAt: -1});
   res.status(200).json({
     message: "Available booths",
     success: true,
@@ -14,7 +16,10 @@ const getAvailableBooths = asyncHandler(async (req, res) => {
 
 // Controller to retrieve all reserved booths
 const getReservedBooths = asyncHandler(async (req, res) => {
-  const booths = await Booth.find({ exhibitorId: { $ne: null } }).populate("exhibitorId").sort({ createdAt:-1 });
+  const booths = await Booth.find({ exhibitorId: { $ne: null } })
+    .populate("expoId", "title")            
+    .populate("exhibitorId", "companyName")
+    .sort({ createdAt: -1 });
   res.status(200).json({
     message: "Reserved booths",
     success: true,
@@ -65,9 +70,6 @@ const getMyBooth = asyncHandler(async (req, res) => {
   });
 });
 
-
-
-
 // Controller to create a new booth
 const createBooth = asyncHandler(async (req, res) => {
   const { expoId, boothNumber, exhibitorId, location } = req.body;
@@ -93,7 +95,6 @@ const createBooth = asyncHandler(async (req, res) => {
     booth,
   });
 });
-
 
 // Controller to update an existing booth
 const updateBooth = asyncHandler(async (req, res) => {
@@ -124,8 +125,6 @@ const updateBooth = asyncHandler(async (req, res) => {
     booth: updated,
   });
 });
-
-
 
 // Controller to delete a booth by its ID
 const deleteBooth = asyncHandler(async (req, res) => {
